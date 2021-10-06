@@ -1,0 +1,44 @@
+version: "3.8"
+
+volumes: 
+  agriculture_iot.volume:
+
+services:
+
+
+# MySQL
+  db:
+    image: mysql:5.7
+    container_name: mysql_host
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db_server
+      MYSQL_USER: db_server
+      MYSQL_PASSWORD: db_server
+      TZ: 'Asia/Tokyo'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./data/db/data:/var/lib/mysql
+      # 日本語設定
+      - ./data/db/my.cnf:/etc/mysql/conf.d/my.cnf
+      # イメージ作成時に実行するファイルを置く
+      - ./data/db/sql:/docker-entrypoint-initdb.d
+      
+    # docker外部からアクセスしない場合はコメントアウト
+    ports:
+      - 3306:3306
+
+# django
+  django:
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: .
+      target: django
+    command: python3 /project/manage.py runserver 0.0.0.0:8000
+    working_dir: /project
+
+    ports:
+      - 8000:8000
+
+    depends_on:
+      - db
